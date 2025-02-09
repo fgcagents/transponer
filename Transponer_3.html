@@ -1,0 +1,156 @@
+ 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transponer por grupos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 5px;
+            text-align: center;
+        }
+        th {
+            background-color: lightgray;
+        }
+        .button-container {
+            margin-top: 10px;
+        }
+        button {
+            margin-right: 10px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Sube un archivo Excel y transpón los grupos</h2>
+    <input type="file" id="fileInput" accept=".xlsx, .xls">
+    
+    <div class="button-container">
+        <button onclick="transposeGroups()">Transponer</button>
+        <button onclick="downloadExcel()">Descargar Excel</button>
+        <button onclick="downloadCSV()">Descargar CSV</button>
+        <button onclick="downloadJSON()">Descargar JSON</button>
+    </div>
+
+    <div id="tableContainer"></div>
+
+    <script>
+        let originalData = [];
+        let transposedData = [];
+
+        document.getElementById("fileInput").addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: "array" });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                originalData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                transposedData = [];
+                renderTable(originalData);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function separateGroups(data) {
+            let groups = [];
+            let currentGroup = [];
+
+            data.forEach(row => {
+                if (row.every(cell => cell === undefined || cell === "")) {
+                    if (currentGroup.length > 0) {
+                        groups.push(currentGroup);
+                        currentGroup = [];
+                    }
+                } else {
+                    currentGroup.push(row);
+                }
+            });
+
+            if (currentGroup.length > 0) {
+                groups.push(currentGroup);
+            }
+
+            return groups;
+        }
+
+        function transposeGroups() {
+            if (originalData.length === 0) return;
+            const groups = separateGroups(originalData);
+            transposedData = [];
+
+            groups.forEach(group => {
+                const transposed = group[0].map((_, colIndex) => group.map(row => row[colIndex]));
+                transposedData.push(...transposed, []); // Añadir una línea vacía entre grupos
+            });
+
+            renderTable(transposedData);
+        }
+
+        function renderTable(data) {
+            const tableContainer = document.getElementById("tableContainer");
+            tableContainer.innerHTML = ""; 
+            const table = document.createElement("table");
+            data.forEach(row => {
+                const tr = document.createElement("tr");
+                row.forEach(cell => {
+                    const td = document.createElement("td");
+                    td.textContent = cell !== undefined ? cell : "";
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+            tableContainer.appendChild(table);
+        }
+
+        function downloadExcel() {
+            if (transposedData.length === 0) return;
+            const ws = XLSX.utils.aoa_to_sheet(transposedData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Transpuesta");
+            XLSX.writeFile(wb, "tabla_transpuesta.xlsx");
+        }
+
+        function downloadCSV() {
+            if (transposedData.length === 0) return;
+            let csvContent = transposedData.map(e => e.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "tabla_transpuesta.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function downloadJSON() {
+            if (transposedData.length === 0) return;
+            const jsonData = JSON.stringify(transposedData, null, 2);
+            const blob = new Blob([jsonData], { type: "application/json" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "tabla_transpuesta.json";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
