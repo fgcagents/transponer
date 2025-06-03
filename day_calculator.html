@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day calculator</title>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">← Tornar a l'inici</a>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">Inici</a>
+                </li>
+                <li class="nav-item">
+                    <a href="transponer.html" class="nav-link">Transponer</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <style>
+    :root {
+      --primary: #007AFF;
+      --primary-dark: #0051D0;
+      --primary-light: #E3F2FD;
+      --background: #F8FAFB;
+      --surface: #FFFFFF;
+      --text-primary: #1A1A1A;
+      --text-secondary: #6B7280;
+      --border-light: #E5E7EB;
+      --border-focus: var(--primary);
+      --shadow-light: 0 4px 16px rgba(0, 0, 0, 0.04);
+      --shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.08);
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --spacing-xs: 8px;
+      --spacing-sm: 12px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --spacing-xl: 32px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      background: var(--background);
+      margin: 0;
+      padding: var(--spacing-lg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.5;
+    }
+
+    .container {
+      background: var(--surface);
+      padding: var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-medium);
+      width: 100%;
+      max-width: 480px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section {
+      margin-bottom: var(--spacing-xl);
+      padding: var(--spacing-lg);
+      background: linear-gradient(135deg, #FAFBFC 0%, #F8F9FA 100%);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .section.hidden {
+      max-height: 0;
+      margin-bottom: 0;
+      padding: 0 var(--spacing-lg);
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 var(--spacing-md) 0;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+    }
+
+    .section-icon {
+      font-size: 1.25rem;
+      opacity: 0.8;
+    }
+
+    .input-group {
+      display: flex;
+      gap: var(--spacing-sm);
+      align-items: flex-end;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .btn-wrapper {
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .input-field {
+      width: 100%;
+      padding: var(--spacing-md);
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      font-weight: 500;
+      background: var(--surface);
+      color: var(--text-primary);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.7;
+    }
+
+    .btn {
+      padding: var(--spacing-md) var(--spacing-lg);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      outline: none;
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+      text-align: center;
+      flex: 0 0 auto;
+      width: 120px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      box-shadow: var(--shadow-light);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 122, 255, 0.25);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+      box-shadow: var(--shadow-light);
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .result-container {
+      margin-top: var(--spacing-xl);
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result-card {
+      background: linear-gradient(135deg, var(--primary-light) 0%, rgba(227, 242, 253, 0.4) 100%);
+      border: 2px solid rgba(0, 122, 255, 0.2);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-light);
+      max-width: 100%;
+    }
+
+    .result-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      opacity: 0.9;
+    }
+
+    .result-text {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .result-text b {
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: var(--spacing-md);
+      }
+
+      .container {
+        padding: var(--spacing-lg);
+      }
+
+      .title {
+        font-size: 1.75rem;
+      }
+
+      .input-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn {
+        width: 100%;
+        margin-top: var(--spacing-sm);
+      }
+
+      .result-card {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-sm);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .section {
+        padding: var(--spacing-md);
+      }
+
+      .title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">Day calculator</h1>
+    </div>
+
+    <div class="section" id="section-date-to-day">
+      <h2 class="section-title">
+        <span class="section-icon">📅</span>
+        De data a ordre del dia
+      </h2>
+      <div class="input-group">
+        <div class="input-wrapper">
+          <label class="input-label" for="data">Selecciona una data</label>
+          <input type="date" id="data" class="input-field">
+        </div>
+        <div class="btn-wrapper">
+          <button class="btn btn-primary" onclick="calculaDiaAny()">
+            Calcular
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="section-day-to-date">
+      <h2 class="section-title">
+        <span class="section-icon">🗓️</span>
+        D'ordre del dia a data
+      </h2>
+      <div class="input-group">
+        <div class="input-wrapper">
+          <label class="input-label" for="any">Any</label>
+          <input type="number" id="any" class="input-field" min="1" max="9999" value="2025" placeholder="2025">
+        </div>
+        <div class="input-wrapper">
+          <label class="input-label" for="numDia">Dia de l'any</label>
+          <input type="number" id="numDia" class="input-field" min="1" max="366" placeholder="1-366">
+        </div>
+        <div class="btn-wrapper">
+          <button class="btn btn-primary" onclick="calculaData()">
+            Calcular
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-container">
+      <div id="resultat"></div>
+    </div>
+  </div>
+
+  <script>
+    function calculaDiaAny() {
+      const input = document.getElementById('data').value;
+      const resultat = document.getElementById('resultat');
+      
+      if (!input) {
+        resultat.innerHTML = createResultCard('⚠️', 'Si us plau, introdueix una data.');
+        showResult();
+        return;
+      }
+      
+      const data = new Date(input);
+      const iniciAny = new Date(data.getFullYear(), 0, 0);
+      const diff = data - iniciAny;
+      const unDia = 1000 * 60 * 60 * 24;
+      const diaAny = Math.floor(diff / unDia);
+      
+      resultat.innerHTML = createResultCard('🎯', `L'ordre del dia de l'any és: <b>${diaAny}</b>`);
+      hideSection('section-day-to-date');
+      showResult();
+    }
+
+    function calculaData() {
+      const any = parseInt(document.getElementById('any').value, 10);
+      const numDia = parseInt(document.getElementById('numDia').value, 10);
+      const resultat = document.getElementById('resultat');
+      
+      if (isNaN(any) || isNaN(numDia)) {
+        resultat.innerHTML = createResultCard('⚠️', 'Introdueix un any i un número de dia vàlids.');
+        showResult();
+        return;
+      }
+      
+      const esTraspas = (any % 4 === 0 && (any % 100 !== 0 || any % 400 === 0));
+      const maxDies = esTraspas ? 366 : 365;
+      
+      if (numDia < 1 || numDia > maxDies) {
+        resultat.innerHTML = createResultCard('⚠️', `El número de dia ha d'estar entre 1 i ${maxDies} per a l'any ${any}.`);
+        showResult();
+        return;
+      }
+      
+      const iniciAny = new Date(any, 0, 1);
+      iniciAny.setDate(iniciAny.getDate() + numDia - 1);
+      
+      const opcions = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        weekday: 'long'
+      };
+      const dataFormatejada = iniciAny.toLocaleDateString('ca-ES', opcions);
+      
+      resultat.innerHTML = createResultCard('✨', `La data corresponent és: <b>${dataFormatejada}</b>`);
+      hideSection('section-date-to-day');
+      showResult();
+    }
+
+    function hideSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      section.classList.add('hidden');
+    }
+
+    function showAllSections() {
+      document.getElementById('section-date-to-day').classList.remove('hidden');
+      document.getElementById('section-day-to-date').classList.remove('hidden');
+      document.getElementById('resultat').innerHTML = '';
+    }
+
+    function showResult() {
+      const resultContainer = document.getElementById('resultat');
+      resultContainer.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+    }
+
+    function createResultCard(icon, text) {
+      return `
+        <div class="result-card">
+          <span class="result-icon">${icon}</span>
+          <span class="result-text">${text}</span>
+        </div>
+        <div style="margin-top: 16px; text-align: center;">
+          <button class="btn btn-primary" onclick="showAllSections()" style="font-size: 0.9rem; padding: 8px 16px; width: auto; min-width: 160px;">
+            Tornar
+          </button>
+        </div>
+      `;
+    }
+
+    // Establecer fecha actual por defecto
+    document.addEventListener('DOMContentLoaded', function() {
+      const today = new Date();
+      const todayString = today.toISOString().split('T')[0];
+      document.getElementById('data').value = todayString;
+    });
+  </script>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
