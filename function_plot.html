@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualitzador de Funcions</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4a5568;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .function-section {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .function-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .function-section h3 {
+            margin-top: 0;
+            color: #2d3748;
+            font-size: 1.1em;
+            margin-bottom: 12px;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 13px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input[type="checkbox"] {
+            margin-right: 8px;
+            transform: scale(1.2);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        canvas {
+            border: 3px solid #e2e8f0;
+            border-radius: 15px;
+            display: block;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .equation {
+            margin-top: 8px;
+            padding: 8px;
+            background: #edf2f7;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #2d3748;
+            text-align: center;
+            border-left: 3px solid #667eea;
+        }
+
+        .color-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            canvas {
+                width: 100%;
+                max-width: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 Visualitzador de Funcions</h1>
+        
+        <div class="controls">
+            <div class="function-section">
+                <h3><span class="color-indicator" style="background-color: #3b82f6;"></span>Funció Lineal: f(x) = ax + b</h3>
+                <div class="input-group">
+                    <label for="a1">Coeficient a (pendent):</label>
+                    <input type="number" id="a1" value="1" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label for="b1">Coeficient b (ordenada a l'origen):</label>
+                    <input type="number" id="b1" value="0" step="0.1">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="show1" checked>
+                    <label for="show1">Mostrar funció</label>
+                </div>
+                <div class="equation" id="eq1">f(x) = 1x + 0</div>
+            </div>
+
+            <div class="function-section">
+                <h3><span class="color-indicator" style="background-color: #ef4444;"></span>Funció Quadràtica: g(x) = ax² + bx + c</h3>
+                <div class="input-group">
+                    <label for="a2">Coeficient a:</label>
+                    <input type="number" id="a2" value="1" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label for="b2">Coeficient b:</label>
+                    <input type="number" id="b2" value="0" step="0.1">
+                </div>
+                <div class="input-group">
+                    <label for="c2">Coeficient c:</label>
+                    <input type="number" id="c2" value="0" step="0.1">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="show2" checked>
+                    <label for="show2">Mostrar funció</label>
+                </div>
+                <div class="equation" id="eq2">g(x) = 1x² + 0x + 0</div>
+            </div>
+        </div>
+
+        <canvas id="canvas" width="900" height="700"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Configuració del sistema de coordenades (dinàmica)
+        let centerX = canvas.width / 2;
+        let centerY = canvas.height / 2;
+        let scale = 30; // píxels per unitat
+        let offsetX = 0; // desplaçament horitzontal
+        let offsetY = 0; // desplaçament vertical
+        
+        function calculateOptimalView() {
+            const a2 = parseFloat(document.getElementById('a2').value) || 0;
+            const b2 = parseFloat(document.getElementById('b2').value) || 0;
+            const c2 = parseFloat(document.getElementById('c2').value) || 0;
+            const show2 = document.getElementById('show2').checked;
+            
+            // Punts importants que sempre han de ser visibles
+            let importantPoints = [{x: 0, y: 0}]; // Origen sempre visible
+            
+            // Si hi ha funció quadràtica visible, afegir el vèrtex
+            if (show2 && a2 !== 0) {
+                const vertexX = -b2 / (2 * a2);
+                const vertexY = a2 * vertexX * vertexX + b2 * vertexX + c2;
+                importantPoints.push({x: vertexX, y: vertexY});
+            }
+            
+            // Calcular els límits basats en els punts importants
+            let minX = Math.min(...importantPoints.map(p => p.x));
+            let maxX = Math.max(...importantPoints.map(p => p.x));
+            let minY = Math.min(...importantPoints.map(p => p.y));
+            let maxY = Math.max(...importantPoints.map(p => p.y));
+            
+            // Afegir marge mínim per no fer la vista massa petita
+            const minRange = 4;
+            if (maxX - minX < minRange) {
+                const center = (minX + maxX) / 2;
+                minX = center - minRange / 2;
+                maxX = center + minRange / 2;
+            }
+            if (maxY - minY < minRange) {
+                const center = (minY + maxY) / 2;
+                minY = center - minRange / 2;
+                maxY = center + minRange / 2;
+            }
+            
+            // Afegir marge extra del 20%
+            const marginX = (maxX - minX) * 0.2;
+            const marginY = (maxY - minY) * 0.2;
+            minX -= marginX;
+            maxX += marginX;
+            minY -= marginY;
+            maxY += marginY;
+            
+            // Calcular la nova escala
+            const rangeX = maxX - minX;
+            const rangeY = maxY - minY;
+            
+            const scaleX = (canvas.width * 0.9) / rangeX;
+            const scaleY = (canvas.height * 0.9) / rangeY;
+            
+            // Utilitzar la escala més petita per mantenir la proporció
+            scale = Math.min(scaleX, scaleY);
+            scale = Math.min(scale, 50); // màxim 50 píxels per unitat
+            scale = Math.max(scale, 15); // mínim 15 píxels per unitat
+            
+            // Calcular el centre òptim
+            offsetX = (minX + maxX) / 2;
+            offsetY = (minY + maxY) / 2;
+            
+            // Actualitzar els centres del canvas
+            centerX = canvas.width / 2;
+            centerY = canvas.height / 2;
+        }
+        
+        function drawGrid() {
+            // Dibuixar la graella
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            
+            // Línies verticals
+            for (let x = centerX % scale; x < canvas.width; x += scale) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Línies horizontals
+            for (let y = centerY % scale; y < canvas.height; y += scale) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawAxes() {
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 2;
+            
+            // Calcular la posició dels eixos
+            const axisX = centerY + offsetY * scale;
+            const axisY = centerX - offsetX * scale;
+            
+            // Eix X (només si és visible)
+            if (axisX >= 0 && axisX <= canvas.height) {
+                ctx.beginPath();
+                ctx.moveTo(0, axisX);
+                ctx.lineTo(canvas.width, axisX);
+                ctx.stroke();
+            }
+            
+            // Eix Y (només si és visible)
+            if (axisY >= 0 && axisY <= canvas.width) {
+                ctx.beginPath();
+                ctx.moveTo(axisY, 0);
+                ctx.lineTo(axisY, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Marques i números
+            ctx.fillStyle = '#4a5568';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            
+            // Marques eix X
+            const startXNum = Math.floor((offsetX - canvas.width/(2*scale)));
+            const endXNum = Math.ceil((offsetX + canvas.width/(2*scale)));
+            
+            for (let i = startXNum; i <= endXNum; i++) {
+                if (i !== 0 || Math.abs(offsetX) > 0.1) {
+                    const x = centerX + (i - offsetX) * scale;
+                    if (x >= 0 && x <= canvas.width && axisX >= 0 && axisX <= canvas.height) {
+                        ctx.fillText(i.toString(), x, axisX + 15);
+                        // Marca petita
+                        ctx.beginPath();
+                        ctx.moveTo(x, axisX - 5);
+                        ctx.lineTo(x, axisX + 5);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            // Marques eix Y
+            ctx.textAlign = 'right';
+            const startYNum = Math.floor((offsetY - canvas.height/(2*scale)));
+            const endYNum = Math.ceil((offsetY + canvas.height/(2*scale)));
+            
+            for (let i = startYNum; i <= endYNum; i++) {
+                if (i !== 0 || Math.abs(offsetY) > 0.1) {
+                    const y = centerY - (i - offsetY) * scale;
+                    if (y >= 0 && y <= canvas.height && axisY >= 0 && axisY <= canvas.width) {
+                        ctx.fillText(i.toString(), axisY - 10, y + 4);
+                        // Marca petita
+                        ctx.beginPath();
+                        ctx.moveTo(axisY - 5, y);
+                        ctx.lineTo(axisY + 5, y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            // Origen (sempre visible)
+            const originX = centerX + (0 - offsetX) * scale;
+            const originY = centerY - (0 - offsetY) * scale;
+            
+            if (originX >= 0 && originX <= canvas.width && originY >= 0 && originY <= canvas.height) {
+                ctx.fillStyle = '#2d3748';
+                ctx.textAlign = 'right';
+                ctx.fillText('0', originX - 10, originY + 15);
+                
+                // Marcar l'origen amb un punt
+                ctx.fillStyle = '#2d3748';
+                ctx.beginPath();
+                ctx.arc(originX, originY, 3, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+        
+        function drawLinearFunction(a, b) {
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            let started = false;
+            const rangeX = canvas.width / scale;
+            const startX = offsetX - rangeX/2;
+            const endX = offsetX + rangeX/2;
+            
+            for (let realX = startX; realX <= endX; realX += 0.1) {
+                const realY = a * realX + b;
+                const canvasX = centerX + (realX - offsetX) * scale;
+                const canvasY = centerY - (realY - offsetY) * scale;
+                
+                if (canvasX >= -50 && canvasX <= canvas.width + 50 && 
+                    canvasY >= -50 && canvasY <= canvas.height + 50) {
+                    if (!started) {
+                        ctx.moveTo(canvasX, canvasY);
+                        started = true;
+                    } else {
+                        ctx.lineTo(canvasX, canvasY);
+                    }
+                }
+            }
+            ctx.stroke();
+        }
+        
+        function drawQuadraticFunction(a, b, c) {
+            if (a === 0) return; // No és una funció quadràtica
+            
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            let started = false;
+            const rangeX = canvas.width / scale;
+            const startX = offsetX - rangeX/2;
+            const endX = offsetX + rangeX/2;
+            
+            for (let realX = startX; realX <= endX; realX += 0.1) {
+                const realY = a * realX * realX + b * realX + c;
+                const canvasX = centerX + (realX - offsetX) * scale;
+                const canvasY = centerY - (realY - offsetY) * scale;
+                
+                if (canvasX >= -100 && canvasX <= canvas.width + 100 && 
+                    canvasY >= -100 && canvasY <= canvas.height + 100) {
+                    if (!started) {
+                        ctx.moveTo(canvasX, canvasY);
+                        started = true;
+                    } else {
+                        ctx.lineTo(canvasX, canvasY);
+                    }
+                }
+            }
+            ctx.stroke();
+            
+            // Dibuixar el vèrtex (sempre visible)
+            const vertexX = -b / (2 * a);
+            const vertexY = a * vertexX * vertexX + b * vertexX + c;
+            const canvasVertexX = centerX + (vertexX - offsetX) * scale;
+            const canvasVertexY = centerY - (vertexY - offsetY) * scale;
+            
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(canvasVertexX, canvasVertexY, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Etiqueta del vèrtex
+            ctx.fillStyle = '#2d3748';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`V(${vertexX.toFixed(1)}, ${vertexY.toFixed(1)})`, 
+                       canvasVertexX, canvasVertexY - 10);
+        }
+        
+        function updateEquations() {
+            const a1 = parseFloat(document.getElementById('a1').value) || 0;
+            const b1 = parseFloat(document.getElementById('b1').value) || 0;
+            const a2 = parseFloat(document.getElementById('a2').value) || 0;
+            const b2 = parseFloat(document.getElementById('b2').value) || 0;
+            const c2 = parseFloat(document.getElementById('c2').value) || 0;
+            
+            // Actualitzar equacions
+            document.getElementById('eq1').textContent = 
+                `f(x) = ${a1}x ${b1 >= 0 ? '+' : ''} ${b1}`;
+            
+            document.getElementById('eq2').textContent = 
+                `g(x) = ${a2}x² ${b2 >= 0 ? '+' : ''} ${b2}x ${c2 >= 0 ? '+' : ''} ${c2}`;
+        }
+        
+        function draw() {
+            // Calcular la vista òptima abans de dibuixar
+            calculateOptimalView();
+            
+            // Netejar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Dibuixar graella i eixos
+            drawGrid();
+            drawAxes();
+            
+            // Obtenir valors
+            const a1 = parseFloat(document.getElementById('a1').value) || 0;
+            const b1 = parseFloat(document.getElementById('b1').value) || 0;
+            const a2 = parseFloat(document.getElementById('a2').value) || 0;
+            const b2 = parseFloat(document.getElementById('b2').value) || 0;
+            const c2 = parseFloat(document.getElementById('c2').value) || 0;
+            
+            const show1 = document.getElementById('show1').checked;
+            const show2 = document.getElementById('show2').checked;
+            
+            // Dibuixar funcions
+            if (show1) {
+                drawLinearFunction(a1, b1);
+            }
+            
+            if (show2 && a2 !== 0) {
+                drawQuadraticFunction(a2, b2, c2);
+            }
+            
+            updateEquations();
+        }
+        
+        // Event listeners
+        document.getElementById('a1').addEventListener('input', draw);
+        document.getElementById('b1').addEventListener('input', draw);
+        document.getElementById('a2').addEventListener('input', draw);
+        document.getElementById('b2').addEventListener('input', draw);
+        document.getElementById('c2').addEventListener('input', draw);
+        document.getElementById('show1').addEventListener('change', draw);
+        document.getElementById('show2').addEventListener('change', draw);
+        
+        // Dibuix inicial
+        draw();
+    </script>
+</body>
+</html>
