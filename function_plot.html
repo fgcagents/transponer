@@ -97,13 +97,64 @@
             margin-top: 10px;
         }
 
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+            display: block;
+            text-align: center;
+        }
+
         canvas {
             border: 3px solid #e2e8f0;
             border-radius: 15px;
-            display: block;
-            margin: 0 auto;
             background: white;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            cursor: grab;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .zoom-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .zoom-btn {
+            background: linear-gradient(145deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .zoom-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .zoom-btn:active {
+            transform: translateY(0);
+        }
+
+        .zoom-info {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #4a5568;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 8px;
         }
 
         .equation {
@@ -138,13 +189,23 @@
                 width: 100%;
                 max-width: 500px;
             }
+
+            .zoom-controls {
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
+     <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">← Tornar a l'inici</a>
+        </div>
+    </nav>
+    
     <div class="container">
-        <h1>📈 Visualitzador de Funcions</h1>
-        
+        <h2>📈 Visualitzador de Funcions</h2>
+       
         <div class="controls">
             <div class="function-section">
                 <h3><span class="color-indicator" style="background-color: #3b82f6;"></span>Funció Lineal: f(x) = ax + b</h3>
@@ -185,43 +246,70 @@
             </div>
         </div>
 
-        <canvas id="canvas" width="900" height="700"></canvas>
+        <div class="canvas-container">
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoomIn">🔍+ Ampliar</button>
+                <button class="zoom-btn" id="zoomOut">🔍- Reduir</button>
+                <button class="zoom-btn" id="resetView">🎯 Reiniciar Vista</button>
+            </div>
+            
+            <div class="zoom-info">
+                <span id="zoomLevel">Zoom: 100%</span> | 
+                <span id="centerInfo">Centre: (0, 0)</span>
+            </div>
+            
+            <canvas id="canvas" width="900" height="700"></canvas>
+        </div>
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Configuració del sistema de coordenades (dinàmica)
-        let centerX = canvas.width / 2;
-        let centerY = canvas.height / 2;
+        // Configuració del sistema de coordenades
         let scale = 30; // píxels per unitat
         let offsetX = 0; // desplaçament horitzontal
         let offsetY = 0; // desplaçament vertical
+        let baseScale = 30; // escala base per calcular percentatges
+        
+        // Variables per arrossegar
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        
+        // Variables per zoom automàtic
+        let autoZoomEnabled = true;
+        
+        function updateZoomInfo() {
+            const zoomPercent = Math.round((scale / baseScale) * 100);
+            document.getElementById('zoomLevel').textContent = `Zoom: ${zoomPercent}%`;
+            document.getElementById('centerInfo').textContent = `Centre: (${offsetX.toFixed(1)}, ${offsetY.toFixed(1)})`;
+        }
         
         function calculateOptimalView() {
+            if (!autoZoomEnabled) return;
+            
             const a2 = parseFloat(document.getElementById('a2').value) || 0;
             const b2 = parseFloat(document.getElementById('b2').value) || 0;
             const c2 = parseFloat(document.getElementById('c2').value) || 0;
             const show2 = document.getElementById('show2').checked;
             
-            // Punts importants que sempre han de ser visibles
-            let importantPoints = [{x: 0, y: 0}]; // Origen sempre visible
+            // Punts importants
+            let importantPoints = [{x: 0, y: 0}];
             
-            // Si hi ha funció quadràtica visible, afegir el vèrtex
             if (show2 && a2 !== 0) {
                 const vertexX = -b2 / (2 * a2);
                 const vertexY = a2 * vertexX * vertexX + b2 * vertexX + c2;
                 importantPoints.push({x: vertexX, y: vertexY});
             }
             
-            // Calcular els límits basats en els punts importants
+            // Calcular límits
             let minX = Math.min(...importantPoints.map(p => p.x));
             let maxX = Math.max(...importantPoints.map(p => p.x));
             let minY = Math.min(...importantPoints.map(p => p.y));
             let maxY = Math.max(...importantPoints.map(p => p.y));
             
-            // Afegir marge mínim per no fer la vista massa petita
+            // Marge mínim
             const minRange = 4;
             if (maxX - minX < minRange) {
                 const center = (minX + maxX) / 2;
@@ -234,7 +322,7 @@
                 maxY = center + minRange / 2;
             }
             
-            // Afegir marge extra del 20%
+            // Marge extra
             const marginX = (maxX - minX) * 0.2;
             const marginY = (maxY - minY) * 0.2;
             minX -= marginX;
@@ -242,34 +330,39 @@
             minY -= marginY;
             maxY += marginY;
             
-            // Calcular la nova escala
+            // Calcular escala
             const rangeX = maxX - minX;
             const rangeY = maxY - minY;
-            
             const scaleX = (canvas.width * 0.9) / rangeX;
             const scaleY = (canvas.height * 0.9) / rangeY;
             
-            // Utilitzar la escala més petita per mantenir la proporció
             scale = Math.min(scaleX, scaleY);
-            scale = Math.min(scale, 50); // màxim 50 píxels per unitat
-            scale = Math.max(scale, 15); // mínim 15 píxels per unitat
+            scale = Math.min(scale, 100);
+            scale = Math.max(scale, 5);
             
-            // Calcular el centre òptim
+            // Centrar
             offsetX = (minX + maxX) / 2;
             offsetY = (minY + maxY) / 2;
-            
-            // Actualitzar els centres del canvas
-            centerX = canvas.width / 2;
-            centerY = canvas.height / 2;
         }
         
         function drawGrid() {
-            // Dibuixar la graella
             ctx.strokeStyle = '#e2e8f0';
             ctx.lineWidth = 1;
             
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Calcular l'espai entre línies de la graella
+            let gridSpacing = scale;
+            if (scale > 80) {
+                gridSpacing = scale / 2;
+            } else if (scale < 20) {
+                gridSpacing = scale * 2;
+            }
+            
             // Línies verticals
-            for (let x = centerX % scale; x < canvas.width; x += scale) {
+            const startX = centerX - offsetX * scale;
+            for (let x = startX % gridSpacing; x < canvas.width; x += gridSpacing) {
                 ctx.beginPath();
                 ctx.moveTo(x, 0);
                 ctx.lineTo(x, canvas.height);
@@ -277,7 +370,8 @@
             }
             
             // Línies horizontals
-            for (let y = centerY % scale; y < canvas.height; y += scale) {
+            const startY = centerY + offsetY * scale;
+            for (let y = startY % gridSpacing; y < canvas.height; y += gridSpacing) {
                 ctx.beginPath();
                 ctx.moveTo(0, y);
                 ctx.lineTo(canvas.width, y);
@@ -286,14 +380,16 @@
         }
 
         function drawAxes() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
             ctx.strokeStyle = '#4a5568';
             ctx.lineWidth = 2;
             
-            // Calcular la posició dels eixos
             const axisX = centerY + offsetY * scale;
             const axisY = centerX - offsetX * scale;
             
-            // Eix X (només si és visible)
+            // Eix X
             if (axisX >= 0 && axisX <= canvas.height) {
                 ctx.beginPath();
                 ctx.moveTo(0, axisX);
@@ -301,7 +397,7 @@
                 ctx.stroke();
             }
             
-            // Eix Y (només si és visible)
+            // Eix Y
             if (axisY >= 0 && axisY <= canvas.width) {
                 ctx.beginPath();
                 ctx.moveTo(axisY, 0);
@@ -309,21 +405,31 @@
                 ctx.stroke();
             }
             
-            // Marques i números
+            // Etiquetes i marques
             ctx.fillStyle = '#4a5568';
             ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
+            
+            // Calcular l'interval de les etiquetes
+            let labelInterval = 1;
+            if (scale > 60) {
+                labelInterval = 0.5;
+            } else if (scale < 15) {
+                labelInterval = 2;
+            } else if (scale < 8) {
+                labelInterval = 5;
+            }
             
             // Marques eix X
-            const startXNum = Math.floor((offsetX - canvas.width/(2*scale)));
-            const endXNum = Math.ceil((offsetX + canvas.width/(2*scale)));
+            ctx.textAlign = 'center';
+            const rangeX = canvas.width / scale;
+            const startXNum = Math.floor((offsetX - rangeX/2) / labelInterval) * labelInterval;
+            const endXNum = Math.ceil((offsetX + rangeX/2) / labelInterval) * labelInterval;
             
-            for (let i = startXNum; i <= endXNum; i++) {
-                if (i !== 0 || Math.abs(offsetX) > 0.1) {
+            for (let i = startXNum; i <= endXNum; i += labelInterval) {
+                if (Math.abs(i) > 0.001) {
                     const x = centerX + (i - offsetX) * scale;
                     if (x >= 0 && x <= canvas.width && axisX >= 0 && axisX <= canvas.height) {
-                        ctx.fillText(i.toString(), x, axisX + 15);
-                        // Marca petita
+                        ctx.fillText(i.toFixed(labelInterval < 1 ? 1 : 0), x, axisX + 15);
                         ctx.beginPath();
                         ctx.moveTo(x, axisX - 5);
                         ctx.lineTo(x, axisX + 5);
@@ -334,15 +440,15 @@
             
             // Marques eix Y
             ctx.textAlign = 'right';
-            const startYNum = Math.floor((offsetY - canvas.height/(2*scale)));
-            const endYNum = Math.ceil((offsetY + canvas.height/(2*scale)));
+            const rangeY = canvas.height / scale;
+            const startYNum = Math.floor((offsetY - rangeY/2) / labelInterval) * labelInterval;
+            const endYNum = Math.ceil((offsetY + rangeY/2) / labelInterval) * labelInterval;
             
-            for (let i = startYNum; i <= endYNum; i++) {
-                if (i !== 0 || Math.abs(offsetY) > 0.1) {
+            for (let i = startYNum; i <= endYNum; i += labelInterval) {
+                if (Math.abs(i) > 0.001) {
                     const y = centerY - (i - offsetY) * scale;
                     if (y >= 0 && y <= canvas.height && axisY >= 0 && axisY <= canvas.width) {
-                        ctx.fillText(i.toString(), axisY - 10, y + 4);
-                        // Marca petita
+                        ctx.fillText(i.toFixed(labelInterval < 1 ? 1 : 0), axisY - 10, y + 4);
                         ctx.beginPath();
                         ctx.moveTo(axisY - 5, y);
                         ctx.lineTo(axisY + 5, y);
@@ -351,7 +457,7 @@
                 }
             }
             
-            // Origen (sempre visible)
+            // Origen
             const originX = centerX + (0 - offsetX) * scale;
             const originY = centerY - (0 - offsetY) * scale;
             
@@ -359,8 +465,6 @@
                 ctx.fillStyle = '#2d3748';
                 ctx.textAlign = 'right';
                 ctx.fillText('0', originX - 10, originY + 15);
-                
-                // Marcar l'origen amb un punt
                 ctx.fillStyle = '#2d3748';
                 ctx.beginPath();
                 ctx.arc(originX, originY, 3, 0, 2 * Math.PI);
@@ -369,47 +473,21 @@
         }
         
         function drawLinearFunction(a, b) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
             ctx.strokeStyle = '#3b82f6';
             ctx.lineWidth = 3;
             ctx.beginPath();
             
             let started = false;
             const rangeX = canvas.width / scale;
-            const startX = offsetX - rangeX/2;
-            const endX = offsetX + rangeX/2;
+            const startX = offsetX - rangeX/2 - 2;
+            const endX = offsetX + rangeX/2 + 2;
+            const step = Math.max(0.1, rangeX / 1000);
             
-            for (let realX = startX; realX <= endX; realX += 0.1) {
+            for (let realX = startX; realX <= endX; realX += step) {
                 const realY = a * realX + b;
-                const canvasX = centerX + (realX - offsetX) * scale;
-                const canvasY = centerY - (realY - offsetY) * scale;
-                
-                if (canvasX >= -50 && canvasX <= canvas.width + 50 && 
-                    canvasY >= -50 && canvasY <= canvas.height + 50) {
-                    if (!started) {
-                        ctx.moveTo(canvasX, canvasY);
-                        started = true;
-                    } else {
-                        ctx.lineTo(canvasX, canvasY);
-                    }
-                }
-            }
-            ctx.stroke();
-        }
-        
-        function drawQuadraticFunction(a, b, c) {
-            if (a === 0) return; // No és una funció quadràtica
-            
-            ctx.strokeStyle = '#ef4444';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            
-            let started = false;
-            const rangeX = canvas.width / scale;
-            const startX = offsetX - rangeX/2;
-            const endX = offsetX + rangeX/2;
-            
-            for (let realX = startX; realX <= endX; realX += 0.1) {
-                const realY = a * realX * realX + b * realX + c;
                 const canvasX = centerX + (realX - offsetX) * scale;
                 const canvasY = centerY - (realY - offsetY) * scale;
                 
@@ -424,24 +502,60 @@
                 }
             }
             ctx.stroke();
+        }
+        
+        function drawQuadraticFunction(a, b, c) {
+            if (a === 0) return;
             
-            // Dibuixar el vèrtex (sempre visible)
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            let started = false;
+            const rangeX = canvas.width / scale;
+            const startX = offsetX - rangeX/2 - 2;
+            const endX = offsetX + rangeX/2 + 2;
+            const step = Math.max(0.01, rangeX / 2000);
+            
+            for (let realX = startX; realX <= endX; realX += step) {
+                const realY = a * realX * realX + b * realX + c;
+                const canvasX = centerX + (realX - offsetX) * scale;
+                const canvasY = centerY - (realY - offsetY) * scale;
+                
+                if (canvasX >= -200 && canvasX <= canvas.width + 200 && 
+                    canvasY >= -200 && canvasY <= canvas.height + 200) {
+                    if (!started) {
+                        ctx.moveTo(canvasX, canvasY);
+                        started = true;
+                    } else {
+                        ctx.lineTo(canvasX, canvasY);
+                    }
+                }
+            }
+            ctx.stroke();
+            
+            // Vèrtex
             const vertexX = -b / (2 * a);
             const vertexY = a * vertexX * vertexX + b * vertexX + c;
             const canvasVertexX = centerX + (vertexX - offsetX) * scale;
             const canvasVertexY = centerY - (vertexY - offsetY) * scale;
             
-            ctx.fillStyle = '#ef4444';
-            ctx.beginPath();
-            ctx.arc(canvasVertexX, canvasVertexY, 5, 0, 2 * Math.PI);
-            ctx.fill();
-            
-            // Etiqueta del vèrtex
-            ctx.fillStyle = '#2d3748';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(`V(${vertexX.toFixed(1)}, ${vertexY.toFixed(1)})`, 
-                       canvasVertexX, canvasVertexY - 10);
+            if (canvasVertexX >= -20 && canvasVertexX <= canvas.width + 20 && 
+                canvasVertexY >= -20 && canvasVertexY <= canvas.height + 20) {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(canvasVertexX, canvasVertexY, 5, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.fillStyle = '#2d3748';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`V(${vertexX.toFixed(1)}, ${vertexY.toFixed(1)})`, 
+                           canvasVertexX, canvasVertexY - 10);
+            }
         }
         
         function updateEquations() {
@@ -451,7 +565,6 @@
             const b2 = parseFloat(document.getElementById('b2').value) || 0;
             const c2 = parseFloat(document.getElementById('c2').value) || 0;
             
-            // Actualitzar equacions
             document.getElementById('eq1').textContent = 
                 `f(x) = ${a1}x ${b1 >= 0 ? '+' : ''} ${b1}`;
             
@@ -460,17 +573,15 @@
         }
         
         function draw() {
-            // Calcular la vista òptima abans de dibuixar
-            calculateOptimalView();
+            if (autoZoomEnabled) {
+                calculateOptimalView();
+            }
             
-            // Netejar canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Dibuixar graella i eixos
             drawGrid();
             drawAxes();
             
-            // Obtenir valors
             const a1 = parseFloat(document.getElementById('a1').value) || 0;
             const b1 = parseFloat(document.getElementById('b1').value) || 0;
             const a2 = parseFloat(document.getElementById('a2').value) || 0;
@@ -480,7 +591,6 @@
             const show1 = document.getElementById('show1').checked;
             const show2 = document.getElementById('show2').checked;
             
-            // Dibuixar funcions
             if (show1) {
                 drawLinearFunction(a1, b1);
             }
@@ -490,9 +600,99 @@
             }
             
             updateEquations();
+            updateZoomInfo();
         }
         
-        // Event listeners
+        // Event listeners per zoom i arrossegar
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            autoZoomEnabled = false;
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Convertir coordenades del ratolí a coordenades reals
+            const realX = offsetX + (mouseX - canvas.width/2) / scale;
+            const realY = offsetY - (mouseY - canvas.height/2) / scale;
+            
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            scale *= zoomFactor;
+            scale = Math.max(1, Math.min(scale, 500));
+            
+            // Ajustar offset per mantenir el punt sota el ratolí
+            offsetX = realX - (mouseX - canvas.width/2) / scale;
+            offsetY = realY + (mouseY - canvas.height/2) / scale;
+            
+            draw();
+        });
+        
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            autoZoomEnabled = false;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                
+                offsetX -= deltaX / scale;
+                offsetY += deltaY / scale;
+                
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                
+                draw();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            canvas.style.cursor = 'grab';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            canvas.style.cursor = 'grab';
+        });
+        
+        canvas.addEventListener('dblclick', (e) => {
+            autoZoomEnabled = false;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            offsetX = offsetX + (mouseX - canvas.width/2) / scale;
+            offsetY = offsetY - (mouseY - canvas.height/2) / scale;
+            
+            draw();
+        });
+        
+        // Botons de zoom
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            autoZoomEnabled = false;
+            scale *= 1.5;
+            scale = Math.min(scale, 500);
+            draw();
+        });
+        
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            autoZoomEnabled = false;
+            scale /= 1.5;
+            scale = Math.max(scale, 1);
+            draw();
+        });
+        
+        document.getElementById('resetView').addEventListener('click', () => {
+            autoZoomEnabled = true;
+            draw();
+        });
+        
+        // Event listeners per les funcions
         document.getElementById('a1').addEventListener('input', draw);
         document.getElementById('b1').addEventListener('input', draw);
         document.getElementById('a2').addEventListener('input', draw);
