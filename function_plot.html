@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualitzador de Funcions</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Estils del menú -->
+   <!--<link rel="stylesheet" href="styles.css"> Estils del menú -->
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: #333;
@@ -100,22 +100,38 @@
 
         .canvas-container {
             position: relative;
-            display: inline-block;
+            width: 100%;
+            max-width: 1200px;
             margin: 20px auto;
-            display: block;
-            text-align: center;
+            overflow: hidden;
         }
 
         canvas {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 80vh;
             border: 3px solid #e2e8f0;
             border-radius: 15px;
             background: white;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             cursor: grab;
+            display: block;
         }
 
-        canvas:active {
-            cursor: grabbing;
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .canvas-container {
+                max-width: 100%;
+                padding: 0 10px;
+            }
+            
+            canvas {
+                max-height: 60vh;
+            }
         }
 
         .zoom-controls {
@@ -195,6 +211,79 @@
                 justify-content: center;
             }
         }
+
+        .func-info {
+          background: #fefcbf;
+            border-left: 4px solid #ecc94b;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 14px;
+            border-radius: 6px;
+        }
+
+        .func-details {
+            background: #c8e9ff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #2d3748;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .func-details summary {
+            font-weight: 600;
+            cursor: pointer;
+            list-style: none;
+            position: relative;
+            padding-right: 30px;
+        }
+
+        .func-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .func-details summary::after {
+            content: '▼';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%) rotate(0deg);
+            transition: transform 0.3s ease;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .func-details[open] summary::after {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .func-details .info-content {
+            padding-top: 12px;
+            margin-top: 8px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .func-details .info-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .func-details .info-content li {
+            padding: 6px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .func-details .info-content li:last-child {
+            border-bottom: none;
+        }
+
+        .func-details .info-content strong {
+            color: #475569;
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
@@ -223,6 +312,10 @@
                     <label for="show1">Mostrar funció</label>
                 </div>
                 <div class="equation" id="eq1">f(x) = 1x + 0</div>
+                <details class="func-details" id="info1">
+                    <summary>📋 Característiques de la funció lineal</summary>
+                    <div class="info-content"></div>
+                </details>
             </div>
 
             <div class="function-section">
@@ -244,6 +337,10 @@
                     <label for="show2">Mostrar funció</label>
                 </div>
                 <div class="equation" id="eq2">g(x) = 1x² + 0x + 0</div>
+                <details class="func-details" id="info2">
+                    <summary>📋 Característiques de la funció quadràtica</summary>
+                    <div class="info-content"></div>
+                </details>
             </div>
         </div>
 
@@ -602,6 +699,7 @@
             
             updateEquations();
             updateZoomInfo();
+            updateFunctionInfo();
         }
         
         // Event listeners per zoom i arrossegar
@@ -694,16 +792,119 @@
         });
         
         // Event listeners per les funcions
-        document.getElementById('a1').addEventListener('input', draw);
-        document.getElementById('b1').addEventListener('input', draw);
-        document.getElementById('a2').addEventListener('input', draw);
-        document.getElementById('b2').addEventListener('input', draw);
-        document.getElementById('c2').addEventListener('input', draw);
+         document.getElementById('a1').addEventListener('input', () => {
+            draw();
+            updateFunctionInfo(); // Agregar esta línea
+        });
+        document.getElementById('b1').addEventListener('input', () => {
+            draw();
+            updateFunctionInfo(); // Agregar esta línea
+        });
+        document.getElementById('a2').addEventListener('input', () => {
+            draw();
+            updateFunctionInfo(); // Agregar esta línea
+        });
+        document.getElementById('b2').addEventListener('input', () => {
+            draw();
+            updateFunctionInfo(); // Agregar esta línea
+        });
+        document.getElementById('c2').addEventListener('input', () => {
+            draw();
+            updateFunctionInfo(); // Agregar esta línea
+        });
         document.getElementById('show1').addEventListener('change', draw);
         document.getElementById('show2').addEventListener('change', draw);
         
+function updateFunctionInfo() {
+    const a1 = parseFloat(document.getElementById('a1').value) || 0;
+    const b1 = parseFloat(document.getElementById('b1').value) || 0;
+    const domRec = 'ℝ (tots els reals)';
+    
+    let info1 = `<ul>
+        <li><strong>Domini:</strong> ${domRec}</li>
+        <li><strong>Recorregut:</strong> ${domRec}</li>
+        <li><strong>Continuïtat:</strong> Contínua</li>
+        <li><strong>Periodicitat:</strong> No periòdica</li>
+        <li><strong>Pendent:</strong> ${a1}</li>
+        <li><strong>Ordenada a l’origen:</strong> y = ${b1}</li>`;
+
+    if (a1 !== 0) {
+        const xCut = (-b1 / a1).toFixed(2);
+        info1 += `<li><strong>Tall amb l’eix X:</strong> x = ${xCut}</li>`;
+    } else {
+        info1 += `<li><strong>Tall amb l’eix X:</strong> No talla (pendent zero)</li>`;
+    }
+
+    info1 += `<li><strong>Tall amb l’eix Y:</strong> y = ${b1}</li>`;
+    info1 += `<li><strong>Comportament:</strong> ${a1 > 0 ? 'Creixent' : (a1 < 0 ? 'Decreixent' : 'Constant')}</li>`;
+    info1 += `</ul>`;
+    document.querySelector('#info1 .info-content').innerHTML = info1;
+
+    const a2 = parseFloat(document.getElementById('a2').value) || 0;
+    const b2 = parseFloat(document.getElementById('b2').value) || 0;
+    const c2 = parseFloat(document.getElementById('c2').value) || 0;
+
+    let info2 = `<ul>
+        <li><strong>Domini:</strong> ${domRec}</li>
+        <li><strong>Continuïtat:</strong> Contínua</li>
+        <li><strong>Periodicitat:</strong> No periòdica</li>`;
+
+    if (a2 !== 0) {
+        const vertexX = (-b2 / (2 * a2)).toFixed(2);
+        const vertexY = (a2 * vertexX * vertexX + b2 * vertexX + c2).toFixed(2);
+        const delta = b2 * b2 - 4 * a2 * c2;
+
+        const recorregut = a2 > 0 ? `[${vertexY}, ∞)` : `(-∞, ${vertexY}]`;
+        info2 += `<li><strong>Recorregut:</strong> ${recorregut}</li>`;
+        info2 += `<li><strong>Concavitat:</strong> ${a2 > 0 ? 'Cap amunt (a > 0)' : 'Cap avall (a < 0)'}</li>`;
+        info2 += `<li><strong>Vèrtex:</strong> (${vertexX}, ${vertexY})</li>`;
+        info2 += `<li><strong>Eix de simetria:</strong> x = ${vertexX}</li>`;
+        info2 += `<li><strong>Mínim/màxim:</strong> Té un ${a2 > 0 ? 'mínim' : 'màxim'} al vèrtex</li>`;
+        info2 += `<li><strong>Intervals:</strong> 
+            ${a2 > 0 
+                ? 'Decreixent per x < ' + vertexX + ', creixent per x > ' + vertexX 
+                : 'Creixent per x < ' + vertexX + ', decreixent per x > ' + vertexX}</li>`;
+
+        if (delta > 0) {
+            const x1 = ((-b2 + Math.sqrt(delta)) / (2 * a2)).toFixed(2);
+            const x2 = ((-b2 - Math.sqrt(delta)) / (2 * a2)).toFixed(2);
+            info2 += `<li><strong>Talls amb l’eix X:</strong> x = ${x1}, x = ${x2}</li>`;
+        } else if (delta === 0) {
+            const x0 = (-b2 / (2 * a2)).toFixed(2);
+            info2 += `<li><strong>Tall amb l’eix X:</strong> x = ${x0}</li>`;
+        } else {
+            info2 += `<li><strong>Tall amb l’eix X:</strong> No talla (arrels complexes)</li>`;
+        }
+
+        info2 += `<li><strong>Tall amb l’eix Y:</strong> y = ${c2}</li>`;
+    } else {
+        info2 += `<li>No és una funció quadràtica (a = 0)</li>`;
+    }
+
+    info2 += `</ul>`;
+    document.querySelector('#info2 .info-content').innerHTML = info2;
+}
+        
+
         // Dibuix inicial
         draw();
+        updateFunctionInfo();
+
+        // Agregar justo abans del // Dibuix inicial:
+
+// Event listener per al canvi de mida de la finestra
+window.addEventListener('resize', () => {
+    // Ajustar el tamany del canvas al contenidor
+    const container = canvas.parentElement;
+    const containerWidth = container.clientWidth;
+    const aspectRatio = canvas.height / canvas.width;
+    
+    canvas.width = containerWidth;
+    canvas.height = containerWidth * aspectRatio;
+    
+    // Redibuixar tot
+    draw();
+});
     </script>
 </body>
 </html>
