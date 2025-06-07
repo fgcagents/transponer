@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualitzador de Funcions</title>
-   <link rel="stylesheet" href="styles.css"> <!-- Estils del menú -->
+   <!--<link rel="stylesheet" href="styles.css"> Estils del menú -->
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -283,25 +283,6 @@
         .func-details .info-content strong {
             color: #475569;
             margin-right: 8px;
-        }
-        .canvas-container {
-            position: relative;
-            width: 100%;
-            max-width: 1200px;
-            margin: 20px auto;
-            overflow: hidden;
-        }
-        
-        @media (orientation: landscape) {
-            .canvas-container {
-                max-height: 80vh;
-            }
-            
-            canvas {
-                width: 100% !important;
-                height: auto !important;
-                max-height: 80vh;
-            }
         }
     </style>
 </head>
@@ -913,24 +894,15 @@ function updateFunctionInfo() {
 
 // Event listener per al canvi de mida de la finestra
 window.addEventListener('resize', () => {
+    // Ajustar el tamany del canvas al contenidor
     const container = canvas.parentElement;
     const containerWidth = container.clientWidth;
+    const aspectRatio = canvas.height / canvas.width;
     
-    // Calcular altura óptima basada en la orientación
-    let aspectRatio;
-    if (window.innerWidth > window.innerHeight) {
-        // Horizontal: usar 0.6 para una vista más panorámica
-        aspectRatio = 0.6;
-    } else {
-        // Vertical: usar 0.8 para una vista más cuadrada
-        aspectRatio = 0.8;
-    }
-    
-    // Aplicar dimensiones
     canvas.width = containerWidth;
     canvas.height = containerWidth * aspectRatio;
     
-    // Redibujar con las nuevas dimensiones
+    // Redibuixar tot
     draw();
 });
     </script>
